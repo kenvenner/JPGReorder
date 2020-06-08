@@ -4,12 +4,17 @@ import datetime
 import os
 import re
 
-__version__ = '1.04'
+__version__ = '1.05'
 
 datestr = '2018-10-18'
 dateval = datetime.datetime.strptime(datestr, '%Y-%m-%d')
 dirstr  = os.path.normpath('c:/test/test1')
 cntstr  = 'CNT00010'
+
+# required files to make this test work:
+# 2019-11-02-CNT00340-DSC02121.JPG
+# 2019-11-02-CNT00540-IMG_5260.JPG
+# IMG_2666.JPG
 
 class TestKVJpg(unittest.TestCase):
 
@@ -58,9 +63,16 @@ class TestKVJpg(unittest.TestCase):
         filerow = [datetime.datetime(2018, 10, 15, 11, 29, 51, 560672),'IMG_3466.JPG']
         kvjpg.datetime_offset_for_matching_filename( filerow, re.compile('IMG_4\d\d\d.JPG'), datetime.timedelta(seconds=-30*60), 4000)
         self.assertEqual( filerow[0], datetime.datetime(2018, 10, 15, 11, 29, 51, 560672) )
+    def test_datetime_offset_for_matching_filename_f01_match_exact_no_group(self):
+        with self.assertRaises(Exception) as context:
+            filerow = [datetime.datetime(2018, 10, 15, 11, 29, 51, 560672),'IMG_3466.JPG']
+            kvjpg.datetime_offset_for_matching_filename( filerow, re.compile('IMG_\d+.JPG'), datetime.timedelta(seconds=-30*60), 3466)
 
     #def test_display_exif_attributes_p01_simple(self):
         #self.assertIsNone( kvjpg.display_exif_attributes("IMG_2666.JPG") )
+
+    def test_get_exif_datetime_attribute_from_jpg_p01_simple(self):
+        self.assertEqual(kvjpg.get_exif_datetime_attribute_from_jpg('2019-11-02-CNT00340-DSC02121.JPG', debug=True), datetime.datetime(2019, 11, 2, 4, 32, 15))
 
 
     def test_get_date_sorted_filelists_p01_simple(self):

@@ -1,3 +1,4 @@
+@echo off
 if NOT "%computername%" == "DT-WIN10" (
    echo Running on a machine we have not seen yet: %computername%
    exit /b 1

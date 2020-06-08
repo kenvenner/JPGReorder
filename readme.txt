@@ -15,7 +15,7 @@ jpgreorder.py - rename files based on criteria passed into the program
    b)  on dt-win10 machine: D:\JPG-Pictures\General Pictures\new
 2) Go to the processing directory for the tools:  dropbox\Linuxshare\JPGReorder
 3) Based on where you put the files run the following command:
-   a)  runnew_box.bat, then run file.bat
+   a)  runnew_dropbox.bat, then run file.bat
    b)  runnew_d.bat, then run file.bat
 4) To capture pictures from debbies icloud account/phone (on the dt-win10 machine)
    a)  icloud.bat, then run file.bat
