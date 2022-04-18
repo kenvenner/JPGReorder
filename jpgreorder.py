@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.08
+@version:  1.09
 
 Search a user defined directory for a set of files
 read the meta data of the files and create a script
@@ -50,7 +50,7 @@ super_config['subdir'] = super_config['sub']
 # program option configuration
 optiondictconfig = {
     'AppVersion' : {
-        'value' : '1.08',
+        'value': '1.09',
         'description' : 'defines the version number for the app',
     },
     'copytodir' : {
@@ -238,18 +238,31 @@ if __name__ == '__main__':
     
     # special processing on options - convert early to fail before processing
     if optiondict['timedelta']:
-        (re_filename, timedelta, pic_range) = kvjpg.parse_optiondict_timedelta( optiondict['timedelta'] )
+        if "," in optiondict['timedelta']:
+            redelta = optiondict['timedelta'].split(",")
+        else:
+            redelta = [optiondict['timedelta']]
 
+        time_shifts = list()
+        for f_delta in redelta:
+            (re_filename, timedelta, pic_range) = kvjpg.parse_optiondict_timedelta( f_delta )
+            time_shifts.append((re_filename, timedelta, pic_range))
 
     # get files as defined by the user
     (filelist, datefilelistsorted, sameorder) = kvjpg.get_date_sorted_filelists( optiondict['fileglob'], datefrom=optiondict['datefrom'], nonjpgdatefrom=optiondict['nonjpgdatefrom'], defaultdate=optiondict['defaultdate'])
 
+    if debug:
+        print('optiondict-timedelta: ', optiondict['timedelta'])
+        print('timedelta: ', timedelta)
+        print('time_shifts:', time_shifts)
+
     # change the offset on files if enabled
     if optiondict['timedelta']:
-        for filename_row in datefilelistsorted:
-            kvjpg.datetime_offset_for_matching_filename( filename_row, re_filename, datetime.timedelta(seconds=timedelta), pic_range, debug=False )
-        # with offsets changed - sort again
-        datefilelistsorted = sorted(datefilelistsorted)
+        for (re_filename, timedelta, pic_range) in time_shifts:
+            for filename_row in datefilelistsorted:
+                kvjpg.datetime_offset_for_matching_filename( filename_row, re_filename, datetime.timedelta(seconds=timedelta), pic_range, debug=debug )
+            # with offsets changed - sort again
+            datefilelistsorted = sorted(datefilelistsorted)
 
     # filter the list if we were provided a date to filter on
     if optiondict['onlygtdate'] or optiondict['onlyltdate']:

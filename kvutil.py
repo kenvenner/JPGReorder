@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.35
+@version:  1.42
 
 Library of tools used in general by KV
 '''
@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # set the module version number
-AppVersion = '1.35'
+AppVersion = '1.42'
 
 # import ast
 #   and call bool(ast.literal_eval(value)) 
@@ -77,6 +77,20 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
             'type'  : 'int',
             'description' : 'defines the display level for print messages',
         },
+        'dumpconfig' : {
+            'value' : False,
+            'type'  : 'bool',
+            'description' : 'defines if we will dump the final optiondict and exit',
+        },
+        'dumpconfigfile' : {
+            'value' : None,
+            'description' : 'defines the filename we dump the populated optiondict dictionary to as json',
+        },
+        'conf_json' : {
+            'value' : None,
+            'type'  : 'liststr',
+            'description' : 'defines the list of json file(s) that houses configuration information',
+        },
         'log_level' : {
             'value' : 'INFO',
             'type'  : 'inlist',
@@ -102,7 +116,7 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
     }
                 
         
-    # create the dictionary - and populate values
+    # create the dictionary - and populate values from configuration passed in
     optiondict = {}
     for key in optiondictconfig:
         if 'value' in optiondictconfig[key]:
@@ -114,7 +128,8 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
             # no value option - set to None
             optiondict[key] = None
 
-    # read in the command line options that we care about
+    # read in the command line options that we care about and create dictionary
+    cmdlineargs = {}
     for argpos in range(1,len(sys.argv)):
         # get the argument and split it into key and value
         (key,value) = sys.argv[argpos].split('=')
@@ -135,6 +150,60 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
                 logger.debug('remapping:%s:to:%s', key, keymapdict[key])
                 key = keymapdict[key]
 
+        # put this into cmdlineargs dictionary
+        cmdlineargs[key] = value
+
+    # read on configuration from json files housing configuration data
+    conf_json_files = []
+    if 'conf_json' in cmdlineargs:
+        # config files defined in the command line
+        conf_json_files = cmdlineargs['conf_json'].split(',')
+        logger.debug('config files defined on command line:%s', conf_json_files)
+    elif 'conf_json' in optiondict and optiondict['conf_json']:
+        # value passed in via optiondictconfig
+        if isinstance(optiondict['conf_json'], list):
+            # configured correctly - as a list in the optionconfigdict
+            conf_json_files = optiondict['conf_json']
+        else:
+            # need to make sure this setting is of the proper format
+            # it was not structured correctly in the json file
+            logger.warning('conf_json entered as a string vs list - format converted')
+            conf_json_files = [optiondict['conf_json']]
+            optiondict['conf_json'] = conf_json_files
+        logger.debug('config files defined on optiondictconfig:%s', conf_json_files)
+
+    # step through all the configuration files reading in the settings
+    # and flatten them out into a final configuratin file based dictionary
+    confargs = {}
+    for conf_json_file in conf_json_files:
+        logger.debug('conf_json_file:%s', conf_json_file)
+        with open( conf_json_file, 'r' ) as json_conf:
+            import json
+            fileargs = json.load(json_conf)
+        for key,value in fileargs.items():
+            confargs[key] = value
+
+    # now that we have loaded and flattened out all file based settings
+    # move these settings to the final proper destination
+    for key,value in confargs.items():
+        if not key in cmdlineargs:
+            # this file value has no associated command line override
+            # value not overridden by value on commmand line
+            if isinstance( value, str ):
+                # what we have is a string - which is the only thing we can read from the command line
+                # stuff this into command line args
+                cmdlineargs[key] = value
+                logger.debug('conf_json key put into cmdlineargs:%s', key)
+            else:
+                # this is other than a string - just set the optiondict value with it
+                optiondict[key] = value
+                logger.debug('conf_json key put into optiondict:%s', key)
+        else:
+            logger.debug('conf_json ignored because command line overrides it:%s:%s', key, value)
+    
+
+    # now step through the configuration settings we have received
+    for key,value in cmdlineargs.items():
         # logic to bring in "default/implied optiondict values if key passed is not part of app definition
         if key not in optiondict and key in defaultdictconfig:
             if debug:  print('kv_parse_command_line:key-not-in-optiondictconfig-but-in-defaultoptiondictconfig:', key)
@@ -160,6 +229,7 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
                 # user did not specify the type of this option
                 optiondict[key] = value
                 if debug: print('type not in optiondictconfig[key]')
+                logger.debug('type not in optiondictconfig[key] for key:%s', key)
             elif optiondictconfig[key]['type'] == 'bool':
                 optiondict[key] = bool(strtobool(value))
             elif optiondictconfig[key]['type'] == 'int':
@@ -225,7 +295,18 @@ def kv_parse_command_line( optiondictconfig, raise_error=False, keymapdict=None,
     # debug when we are done
     if debug:  print('kv_parse_command_line:optiondict:', optiondict)
     logger.debug('optiondict:%s', optiondict)
-    
+
+    # check to see if we want to dump the optiondict out to a file
+    if 'dumpconfigfile' in optiondict and optiondict['dumpconfigfile']:
+        dump_dict_to_json_file( optiondict['dumpconfigfile'], optiondict )
+        
+    # check to see if they set the dumpconfig setting if so display and exit
+    if 'dumpconfig' in optiondict and optiondict['dumpconfig']:
+        print('kv_parse_command_line:Dump configuration requested:')
+        for (key,val) in optiondict.items():
+            print('{}{}:{}'.format(key, '.'*(30-len(key)), val))
+        sys.exit()
+        
     # return what we created
     return optiondict
 
@@ -697,7 +778,7 @@ def remove_dir(dirname,calledfrom='',debug=False,maxretry=20):
 #  YYYY-MM-DD
 #  YYYYMMDD
 #
-def datetime_from_str( value ):
+def datetime_from_str( value, skipblank=False ):
     import re
     datefmts = (
         ( re.compile('\d{1,2}\/\d{1,2}\/\d\d$'), '%m/%d/%y' ),
@@ -708,6 +789,9 @@ def datetime_from_str( value ):
         ( re.compile('^\d{8}$'), '%Y%m%d' ),
     )
 
+    if skipblank and not value:
+        return value
+    
     for (redate, datefmt) in datefmts:
         if redate.match(value):
             return datetime.datetime.strptime(value, datefmt)
@@ -782,4 +866,11 @@ def scriptinfo():
                "dir": scriptdir}
     return scr_dict
 
+
+#utility used to dump a dictionary to a file in json format
+def dump_dict_to_json_file( filename, optiondict ):
+    import json
+    with open( filename, 'w' ) as json_out:
+        json.dump( optiondict, json_out )
+        
 # eof
