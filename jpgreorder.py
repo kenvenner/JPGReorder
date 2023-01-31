@@ -1,7 +1,7 @@
 '''
 @author:   Ken Venner
 @contact:  ken@venerllc.com
-@version:  1.09
+@version:  1.10
 
 Search a user defined directory for a set of files
 read the meta data of the files and create a script
@@ -50,7 +50,7 @@ super_config['subdir'] = super_config['sub']
 # program option configuration
 optiondictconfig = {
     'AppVersion' : {
-        'value': '1.09',
+        'value': '1.10',
         'description' : 'defines the version number for the app',
     },
     'copytodir' : {
@@ -247,14 +247,20 @@ if __name__ == '__main__':
         for f_delta in redelta:
             (re_filename, timedelta, pic_range) = kvjpg.parse_optiondict_timedelta( f_delta )
             time_shifts.append((re_filename, timedelta, pic_range))
+    else:
+        timedelta = redelta = time_shifts = 0
 
     # get files as defined by the user
     (filelist, datefilelistsorted, sameorder) = kvjpg.get_date_sorted_filelists( optiondict['fileglob'], datefrom=optiondict['datefrom'], nonjpgdatefrom=optiondict['nonjpgdatefrom'], defaultdate=optiondict['defaultdate'])
 
+    # debugging
     if debug:
         print('optiondict-timedelta: ', optiondict['timedelta'])
         print('timedelta: ', timedelta)
         print('time_shifts:', time_shifts)
+        print('datefilelistsorted:')
+        for fname in datefilelistsorted:
+            print(fname)
 
     # change the offset on files if enabled
     if optiondict['timedelta']:
@@ -283,6 +289,13 @@ if __name__ == '__main__':
                 filteredfilelist.append(filename_row)
         # overwrite the array with the newly created array
         datefilelistsorted = filteredfilelist
+
+    # debugging
+    if debug:
+        print('filteredfilelist:')
+        for fname in datefilelistsorted:
+            print(fname)
+
 
     # filter the list to files that don't have dates on them
     if optiondict['onlynondate']:
