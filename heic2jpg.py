@@ -49,6 +49,7 @@ def convert_heic_to_jpg(optiondict):
         print("No HEIC files found")
         return
 
+    skipped_files = []
     for f in tqdm(files):
         # check to see the file exits - if not skip
         if not os.path.exists(f):
@@ -75,12 +76,18 @@ def convert_heic_to_jpg(optiondict):
         # print(exif_dict)
     
         # save out the JPG with meta data
-        image.save(str(f.with_suffix('.jpg')), "JPEG",  exif=exif_dict)
+        if exif_dict:
+            image.save(str(f.with_suffix('.jpg')), "JPEG",  exif=exif_dict)
+        else:
+            skipped_files.append(f)
 
         # remove file if requested
         if optiondict['delete']:
             f.unlink()
 
+        # return the skipped files
+        return skipped_files
+    
 def convert_heic_to_jpg_no_exif_data(optiondict):
     print("Converting HEIC files to JPG")
     files = list(Path(optiondict['workingdir']).glob("*.heic")) + list(Path(optiondict['workingdir']).glob("*.HEIC"))
@@ -104,4 +111,11 @@ if __name__ == "__main__":
     if not optiondict['workingdir']:
         optiondict['workingdir'] = os.path.normpath('.')
      
-    convert_heic_to_jpg(optiondict)
+    skipped_files = convert_heic_to_jpg(optiondict)
+
+    # show waht we skipped
+    if skipped_files:
+        print('Following files could not be converted')
+        for x in skipped_files:
+            print(x)
+            

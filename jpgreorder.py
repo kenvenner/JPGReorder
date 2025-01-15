@@ -62,7 +62,10 @@ optiondictconfig = {
         'type' : 'dir',
     },
     'fileglob' : {
-        'description' : 'file search string (globing)',
+        'description' : 'file search string with full  path (globing)',
+    },
+    'fileglob_glob' : {
+        'description' : 'file search string file only portion (globing)',
     },
     'outfile' : {
         'value' : 'file.bat',
@@ -224,7 +227,9 @@ if __name__ == '__main__':
     # set a default value in not specified
     if not optiondict['workingdir']:
         optiondict['workingdir'] = os.path.normpath('.')
-    if not optiondict['fileglob']:
+    if optiondict['fileglob_glob']:
+        optiondict['fileglob'] = os.path.join(optiondict['workingdir'], optiondict['fileglob_glob'])
+    elif not optiondict['fileglob']:
         optiondict['fileglob'] = os.path.join(optiondict['workingdir'], '*.jpg')
 
     # process superconfigurations if set
