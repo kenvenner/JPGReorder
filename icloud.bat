@@ -16,7 +16,7 @@ call kv-activate
 rem starting date - last time we extracted files - update after each run
 rem python jpgreorder.py workingdir="D:\JPG-Pictures\iCloud Photos\Downloads" copytodir="D:\JPG-Pictures\General Pictures\new" adddate=1 addcnt=0 onlygtdate=08/17/2024
 
-python jpgreorder.py workingdir="C:\Users\ken\iCloudPhotos\Photos" copytodir="D:\JPG-Pictures\General Pictures\new" adddate=1 addcnt=0 fileglob_glob="*.heic" onlygtdate=01/14/2025
+python jpgreorder.py workingdir="C:\Users\ken\iCloudPhotos\Photos" copytodir="D:\JPG-Pictures\General Pictures\new" adddate=1 addcnt=0 fileglob_glob="*.heic" onlygtdate=09/01/2025
 echo Run file.bat, then heic_new.bat
 
 

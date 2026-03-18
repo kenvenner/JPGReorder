@@ -54,10 +54,14 @@ def convert_heic_to_jpg(optiondict):
         # check to see the file exits - if not skip
         if not os.path.exists(f):
             continue
-        
+
         # open the image file
-        heif_file = read_heif(f)
-   
+
+        try:
+            heif_file = read_heif(f)
+        except Exception as e:
+            print(f, 'had issues:', e)
+            
         #create the new image
         image = Image.frombytes(
             heif_file.mode,
@@ -67,6 +71,7 @@ def convert_heic_to_jpg(optiondict):
             heif_file.mode,
             heif_file.stride,
         )
+
         
         # create the meta data to add
         # print(heif_file.info.keys())
@@ -74,19 +79,20 @@ def convert_heic_to_jpg(optiondict):
         exif_dict=dictionary['exif']
         # debug 
         # print(exif_dict)
-    
+
         # save out the JPG with meta data
         if exif_dict:
             image.save(str(f.with_suffix('.jpg')), "JPEG",  exif=exif_dict)
         else:
             skipped_files.append(f)
+            
 
         # remove file if requested
         if optiondict['delete']:
             f.unlink()
-
-        # return the skipped files
-        return skipped_files
+            
+    # return the skipped files
+    return skipped_files
     
 def convert_heic_to_jpg_no_exif_data(optiondict):
     print("Converting HEIC files to JPG")

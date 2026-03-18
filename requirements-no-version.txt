@@ -1,0 +1,5 @@
+piexif
+pillow
+pillow_heif
+python-dateutil
+tqdm
